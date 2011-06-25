@@ -1,0 +1,52 @@
+Vague design plans:
+
+At least 5 implementations:
+
+ - tracer
+ - methodjit
+ - type-inference/other analysis
+ - interpreter
+ - ahead-of-time compiler
+   - heavy optimization
+
+On the side:
+  - good GC from the start
+  - assembler based on LLVM (generate bitcode?)
+    - why not nitro? well, why nitro
+  - ropes
+  - fatvals
+  - shape/map optimization
+  - register allocation
+
+All of these should be based probably on two IRs:
+  - a register-based high-level bytecode (BC)
+    - compiler should be written in a static subset of this
+  - a low-level assemblable IR (LIR)
+    - probably virtual registers
+
+The aim is to never reimplement the same thing twice!
+
+Pypy creates a translation from bytecode to LIR, and bases its implementations on top of that.
+
+
+So the rough order of implementations is:
+
+  - define a bytecode for:
+    - functions
+    - addition
+    - copying
+    - integer operations
+
+  - write the interpreter for it
+  - write the ahead-of-time compiler
+
+  - expand the language
+    - strings, objects
+
+  - write the GC
+  - make fatvals work
+  - write ropes
+  - write tracer for it
+  - write the type-inference
+
+
