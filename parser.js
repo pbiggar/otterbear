@@ -1,14 +1,13 @@
 /* Parses JS code into bytecode. */
 
-/* For now, simply read test.js. */
+opcodes = require("./opcodes");
 
-(function() {
-
-function parse(str)
+exports.parse = function parse(str)
 {
   lines = str.split("\n");
   bytes = [];
-  for each (var l in lines) {
+  for (var i in lines) {
+    var l = lines[i];
     if (l == "") {
       continue;
     }
@@ -23,13 +22,9 @@ function parse(str)
   return bytes;
 }
 
-function fetch_opcode (name, args) {
+fetch_opcode = function (name, args) {
   // Call constructor via apply
   var obj = new opcodes[name];
   opcodes[name].apply(obj, args);
   return obj;
 }
-
-var bc = parse(read("test.bc"));
-
-})();

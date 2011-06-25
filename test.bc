@@ -1,4 +1,4 @@
-assign j 5
-add i j 1
-call i add i j
-call _ print i
+Assign j 5
+Add i j 1
+Call i add i j
+Call _ print i
