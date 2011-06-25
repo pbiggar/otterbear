@@ -1,0 +1,4 @@
+assign j 5
+add i j 1
+call i add i j
+call _ print i

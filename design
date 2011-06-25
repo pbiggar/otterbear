@@ -10,7 +10,7 @@ At least 5 implementations:
    - heavy optimization
 
 On the side:
-  - good GC from the start
+  - good GC from its first implementation
   - assembler based on LLVM (generate bitcode?)
     - why not nitro? well, why nitro
   - ropes
@@ -39,14 +39,20 @@ So the rough order of implementations is:
 
   - write the interpreter for it
   - write the ahead-of-time compiler
+    - this comes early because we need to understand the constraints for how we
+      write everything else
 
   - expand the language
     - strings, objects
 
   - write the GC
+  - write tracer for it
+
+  - expand the language
+    - ffi
+
   - make fatvals work
   - write ropes
-  - write tracer for it
   - write the type-inference
 
 
