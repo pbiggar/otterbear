@@ -1,2 +1,0 @@
-exports.interpret = function(bytecodes) {
-}

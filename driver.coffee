@@ -1,4 +1,6 @@
-parser = require("./parser");
+#!/usr/bin/env coffee
+
+parser = require("./parser")
 interpreter = require("./interpreter");
 fs = require("fs")
 
