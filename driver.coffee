@@ -1,10 +1,11 @@
 #!/usr/bin/env coffee
 
 parser = require("./parser")
-interpreter = require("./interpreter");
+interpreter = require("./interpreter")
 fs = require("fs")
+util = require("util")
 
-input = fs.readFileSync("test.bc", 'utf-8');
-console.log(input);
-bytecodes = parser.parse(input);
-interpreter.interpret(bytecodes);
+input = fs.readFileSync("test.bc", 'utf-8')
+bytecodes = parser.parse(input)
+util.dump bytecodes
+interpreter.interpret(bytecodes)
