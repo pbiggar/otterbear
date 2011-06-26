@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+import subprocess
+import re
+import sys
+import os
+
+# Run it
+proc = subprocess.Popen(['coffee'] + sys.argv[1:], stderr=subprocess.PIPE)
+(_, err) = proc.communicate()
+
+if proc.returncode == 0:
+  sys.exit(0)
+
+def read_compiled(filename):
+  read_compiled.cache = getattr(read_compiled, 'cache', {})
+  if filename in read_compiled.cache:
+    out = read_compiled.cache[filename]
+  else:
+    proc = subprocess.Popen(['coffee', '--print', filename], stdout=subprocess.PIPE)
+    out, _ = proc.communicate()
+    assert (proc.returncode == 0)
+    read_compiled.cache[filename] = out
+
+  return out.split('\n')
+
+# Print it more nicely
+for line in err.split('\n'):
+  match = re.match('^\s+at\s([^:]*):(\d+):(\d+)$', line)
+  match = match or re.match('^\s+at\s\S+\s+\(([^:]*):(\d+):(\d+)\)$', line)
+  if match:
+    filename, line_num, col_num = match.groups()
+    line_num = int(line_num)
+    col_num = int(col_num)
+
+    if os.path.exists(filename) and filename.endswith(".coffee"):
+      print line, ' -> '
+      print "\t", read_compiled(filename)[line_num-1]
+
+      continue
+
+  print line
+
+
+
