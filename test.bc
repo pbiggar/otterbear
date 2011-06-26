@@ -1,12 +1,39 @@
 function main
-assign j 5
-add i j 1
-call i add i j
-call _ print i
-return 0
 
-function add a b
-add _1 a b
-return _1
+# j = 5
+assign _1 5
+write j _1
+
+# i = j + 1
+read _2 j
+assign _3 1
+add _4 _2 _3
+write i _4
+
+# i = add(i, j)
+read _5 i
+read _6 j
+call _7 add _5 _6
+write i _7
+
+# print (i)
+read _8 i
+call _ print _8
+
+# return 0
+assign _9 0
+return _9
+
+
+# function add a b
+function add _1 _2
+write a _1
+write b _2
+
+# return a + b
+read _3 a
+read _4 b
+add _5 _3 _4
+return _5
 
 

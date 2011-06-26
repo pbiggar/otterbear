@@ -14,6 +14,24 @@ exports.Assign = class Assign
     rt.write_local @lval, rval
 
 
+exports.Read = class Read
+  constructor: (@lval, @rval) ->
+
+  execute: (rt) ->
+    rval = rt.read_local @rval
+    rt.write_local @lval, rval
+
+
+exports.Write = class Write
+  constructor: (@lval, @rval) ->
+
+  execute: (rt) ->
+    rval = rt.read_local @rval
+    rt.write_local @lval, rval
+
+
+
+
 exports.Call = class Call
   constructor: (@lval, @name, @params...) ->
 

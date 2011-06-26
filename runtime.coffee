@@ -25,8 +25,9 @@ class Stack
     @frames[@frames.length - 1]
 
 class StackFrame
-  constructor: (@params) ->
+  constructor: () ->
     @locals = {}
+    @registers = []
 
 
 exports.Runtime = Runtime
