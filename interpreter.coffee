@@ -4,7 +4,7 @@ class Interpreter
   constructor: () ->
 
   execute: (rt, funktion) ->
-    for _,bc of funktion.bytecodes
+    for bc in funktion.bytes
       bc.execute (rt)
 
 exports.Interpreter = Interpreter
