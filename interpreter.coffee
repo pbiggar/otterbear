@@ -1,8 +1,10 @@
 runtime = require("./runtime")
 
-exports.interpret = (bytecodes) ->
-  rt = new runtime.Runtime()
+class Interpreter
+  constructor: () ->
 
-  for _, bc of bytecodes
-    bc.execute (rt)
-    console.log rt
+  execute: (rt, funktion) ->
+    for _,bc of funktion.bytecodes
+      bc.execute (rt)
+
+exports.Interpreter = Interpreter

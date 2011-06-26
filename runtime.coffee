@@ -2,10 +2,10 @@ class Runtime
 
   constructor: () ->
     @stack = new Stack()
-    @stack.frames.push (new StackFrame())
+    @stack.frames.push (new StackFrame([]))
 
-  push_frame: () ->
-    @stack.frames.push (new StackFrame())
+  push_frame: (params) ->
+    @stack.frames.push (new StackFrame(params))
 
   pop_frame: () ->
     @stack.frames.pop()
@@ -25,7 +25,7 @@ class Stack
     @frames[@frames.length - 1]
 
 class StackFrame
-  constructor: () ->
+  constructor: (@params) ->
     @locals = {}
 
 

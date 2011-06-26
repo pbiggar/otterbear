@@ -19,4 +19,10 @@ exports.Call = class Call
 
   execute: (rt) ->
     func = rt.read_local(@name)
+    @TODO()
 
+exports.Funktion = class Funktion
+  constructor: (@name, @params, @bytes) ->
+
+exports.Return = class Return
+  constructor: (@rval) ->

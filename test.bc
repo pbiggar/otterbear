@@ -1,4 +1,12 @@
-Assign j 5
-Add i j 1
-Call i add i j
-Call _ print i
+function main
+assign j 5
+add i j 1
+call i add i j
+call _ print i
+return 0
+
+function add a b
+add _1 a b
+return _1
+
+
