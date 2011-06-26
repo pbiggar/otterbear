@@ -8,5 +8,4 @@ util = require("./util")
 
 input = fs.readFileSync("test.bc", 'utf-8')
 bytecodes = parser.parse(input)
-console.log(bytecodes)
 interpreter.interpret(bytecodes)
