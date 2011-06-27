@@ -1,12 +1,8 @@
-/* Parses JS code into bytecode. */
+# Parses JS code into bytecode.
 
 opcodes = require("./opcodes")
 util = require("util")
 assert = require("assert")
-
-var_dump = (obj) ->
-  console.log(util.inspect(obj))
-  obj
 
 remove_empty = (strings) ->
   (str for str in strings when str isnt "")
