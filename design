@@ -30,18 +30,20 @@ The aim is to never reimplement the same thing twice!
 Pypy creates a translation from bytecode to LIR, and bases its implementations on top of that.
 
 
-So the rough order of implementations is:
+So the rough order of implementations is ('-' is TODO, '+' is done)
 
-  - define a bytecode for:
-    - functions
-    - addition
-    - copying
-    - integer operations
+  + define a bytecode for:
+    + functions
+    + addition
+    + copying
+    + integer operations
 
-  - write the interpreter for it
+  + write the interpreter for it
   - write the ahead-of-time compiler
     - this comes early because we need to understand the constraints for how we
       write everything else
+    - rewrite interpreter using this
+      - figure out how Pypy does this
 
   - expand the language
     - strings, objects
@@ -53,6 +55,11 @@ So the rough order of implementations is:
     - ffi
 
   - make fatvals work
+
+  - expand the language:
+    - actually parse javascript
+    - 
+
   - write ropes
   - write the type-inference
 
