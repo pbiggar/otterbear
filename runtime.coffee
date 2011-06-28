@@ -5,12 +5,13 @@ class Runtime
 
   constructor: (@engine, @funktions) ->
     @stack = new Stack()
+    @push_frame []
 
   call: (funktion_name, args) ->
     @push_frame(args)
-    return_val = @funktions[funktion_name].execute(@)
+    return_val = @funktions[funktion_name].execute(@, args)
     @pop_frame()
-    return return_val
+    return_val
 
 
   push_frame: (args) ->

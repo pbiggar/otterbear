@@ -1,5 +1,8 @@
+var_dump = require('./util').var_dump
+
 exports.builtins =
   print:
-    execute: (rt, arg) ->
-      for arg in rt.frame().registers
+    execute: (rt, args) ->
+      for arg in args
         console.log(arg)
+      '0'

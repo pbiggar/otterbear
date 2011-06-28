@@ -46,6 +46,7 @@ exports.Funktion = class Funktion
 
   execute: (rt) ->
     rt.engine.execute(rt, @)
+    rt.registers[0]
 
 
 exports.Return = class Return

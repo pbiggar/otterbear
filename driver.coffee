@@ -6,6 +6,7 @@ runtime = require("./runtime")
 interpreter = require("./interpreter")
 fs = require("fs")
 util = require("util")
+var_dump = util.var_dump
 
 
 input = fs.readFileSync("test.bc", 'utf-8')
