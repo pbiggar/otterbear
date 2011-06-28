@@ -8,9 +8,7 @@ class Runtime
 
   call: (funktion_name, args) ->
     @push_frame(args)
-    @engine.execute(this, @funktions[funktion_name])
-    return_val = @registers[0]
-    var_dump return_val
+    return_val = @funktions[funktion_name].execute(@)
     @pop_frame()
     return return_val
 

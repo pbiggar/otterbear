@@ -44,6 +44,8 @@ exports.Call = class Call
 exports.Funktion = class Funktion
   constructor: (@name, @params, @bytes) ->
 
+  execute: (rt) ->
+    rt.registers[@rval]
 
 
 exports.Return = class Return
