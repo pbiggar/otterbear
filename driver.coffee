@@ -4,9 +4,10 @@ parser = require("./parser")
 builtins = require("./builtins")
 runtime = require("./runtime")
 interpreter = require("./interpreter")
-fs = require("fs")
-util = require("util")
+compiler = require("./compiler")
+util = require("./util")
 var_dump = util.var_dump
+fs = require("fs")
 
 
 input = fs.readFileSync("test.bc", 'utf-8')
@@ -16,7 +17,9 @@ user_functions = parser.parse(input)
 for k,v of user_functions
   funktions[k] = v
 
-engine = new interpreter.Interpreter()
-rt = new runtime.Runtime(engine, funktions)
+#engine = new interpreter.Interpreter()
+engine = new compiler.Compiler()
+engine.compile(funktions)
+#rt = new runtime.Runtime(engine, funktions)
 
-rt.call('main', [])
+#rt.call('main', [])
