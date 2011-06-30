@@ -1,12 +1,6 @@
-//
-// This class is a native C++ Node.js extension for creating GTK+ desktop notification
-//
 #include <v8.h>
 #include <node.h>
-// We need those two libraries for the GTK+ notification
 #include <string>
-#include <gtkmm.h>
-#include <libnotifymm.h>
 
 /*
 
@@ -44,11 +38,11 @@ Object templates: Each function template has an associated object template. acce
 //using namespace node;
 using namespace v8;
 
-class Gtknotify : node::ObjectWrap {
+class MyLLVM : node::ObjectWrap {
   private:
   public:
-    Gtknotify() {}
-    ~Gtknotify() {}
+    MyLLVM() {}
+    ~MyLLVM() {}
     
     // Notification title
     std::string title;
@@ -75,35 +69,33 @@ class Gtknotify : node::ObjectWrap {
       v8::Local<FunctionTemplate> local_function_template = v8::FunctionTemplate::New(New);
       
       // Make it persistent and assign it to our object's persistent_function_template attribute
-      Gtknotify::persistent_function_template = v8::Persistent<FunctionTemplate>::New(local_function_template);
+      MyLLVM::persistent_function_template = v8::Persistent<FunctionTemplate>::New(local_function_template);
       // Each JavaScript object keeps a reference to the C++ object for which it is a wrapper with an internal field.
-      Gtknotify::persistent_function_template->InstanceTemplate()->SetInternalFieldCount(1); // 1 since this is a constructor function
+      MyLLVM::persistent_function_template->InstanceTemplate()->SetInternalFieldCount(1); // 1 since this is a constructor function
       // Set a class name for objects created with our constructor
-      Gtknotify::persistent_function_template->SetClassName(v8::String::NewSymbol("Notification"));
+      MyLLVM::persistent_function_template->SetClassName(v8::String::NewSymbol("Notification"));
       
       // Set property accessors
-      Gtknotify::persistent_function_template->InstanceTemplate()->SetAccessor(String::New("title"), GetTitle, SetTitle);
-      Gtknotify::persistent_function_template->InstanceTemplate()->SetAccessor(String::New("icon"), GetIcon, SetIcon);
+      MyLLVM::persistent_function_template->InstanceTemplate()->SetAccessor(String::New("title"), GetTitle, SetTitle);
+      MyLLVM::persistent_function_template->InstanceTemplate()->SetAccessor(String::New("icon"), GetIcon, SetIcon);
       
       // @Node.js macro to help bind C++ methods to Javascript methods (see https://github.com/joyent/node/blob/v0.2.0/src/node.h#L34)
       // Arguments: our constructor function, Javascript method na,e, C++ method name
-      NODE_SET_PROTOTYPE_METHOD(Gtknotify::persistent_function_template, "send", Send);
+      NODE_SET_PROTOTYPE_METHOD(MyLLVM::persistent_function_template, "send", Send);
       
       // Set the "notification" property to the target and assign it to our constructor function
-      target->Set(String::NewSymbol("notification"), Gtknotify::persistent_function_template->GetFunction());
+      target->Set(String::NewSymbol("notification"), MyLLVM::persistent_function_template->GetFunction());
     }
 
     // new Notification();
-    // This is our constructor function. It instantiate a C++ Gtknotify object and returns a Javascript handle to this object.
+    // This is our constructor function. It instantiate a C++ MyLLVM object and returns a Javascript handle to this object.
     static Handle<Value> New(const Arguments& args) {
       HandleScope scope;
-      Gtknotify* gtknotify_instance = new Gtknotify();
+      MyLLVM* myllvm = new MyLLVM();
       // Set some default values
-      gtknotify_instance->title = "Node.js";
-      gtknotify_instance->icon = "terminal";
       
       // Wrap our C++ object as a Javascript object
-      gtknotify_instance->Wrap(args.This());
+      myllvm->Wrap(args.This());
       
       
       // Our constructor function returns a Javascript object which is a wrapper for our C++ object,
@@ -116,17 +108,11 @@ class Gtknotify : node::ObjectWrap {
     static v8::Handle<Value> Send(const Arguments& args) {
       v8::HandleScope scope;
       // Extract C++ object reference from "this" aka args.This() argument
-      Gtknotify* gtknotify_instance = node::ObjectWrap::Unwrap<Gtknotify>(args.This());
+      MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(args.This());
       
       // Convert first argument to V8 String
       v8::String::Utf8Value v8str(args[0]);
       
-      // see http://library.gnome.org/devel/libnotify/0.7/NotifyNotification.html
-      Notify::init("Basic");
-      // Args: title, content, icon
-      Notify::Notification n(gtknotify_instance->title.c_str(), *v8str, gtknotify_instance->icon.c_str()); // *v8str points to the C string
-      // Display notification
-      n.show();
       // Return value
       return v8::Boolean::New(true);
     }
@@ -134,26 +120,26 @@ class Gtknotify : node::ObjectWrap {
     // notification.title
     static v8::Handle<Value> GetTitle(v8::Local<v8::String> property, const v8::AccessorInfo& info) {
       // Extract the C++ request object from the JavaScript wrapper.
-      Gtknotify* gtknotify_instance = node::ObjectWrap::Unwrap<Gtknotify>(info.Holder());
-      return v8::String::New(gtknotify_instance->title.c_str());
+      MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
+      return v8::String::New(myllvm->title.c_str());
     }
     // notification.title=
     static void SetTitle(Local<String> property, Local<Value> value, const AccessorInfo& info) {
-      Gtknotify* gtknotify_instance = node::ObjectWrap::Unwrap<Gtknotify>(info.Holder());
+      MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
       v8::String::Utf8Value v8str(value);
-      gtknotify_instance->title = *v8str;
+      myllvm->title = *v8str;
     }
     // notification.icon
     static v8::Handle<Value> GetIcon(v8::Local<v8::String> property, const v8::AccessorInfo& info) {
       // Extract the C++ request object from the JavaScript wrapper.
-      Gtknotify* gtknotify_instance = node::ObjectWrap::Unwrap<Gtknotify>(info.Holder());
-      return v8::String::New(gtknotify_instance->icon.c_str());
+      MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
+      return v8::String::New(myllvm->icon.c_str());
     }
     // notification.icon=
     static void SetIcon(Local<String> property, Local<Value> value, const AccessorInfo& info) {
-      Gtknotify* gtknotify_instance = node::ObjectWrap::Unwrap<Gtknotify>(info.Holder());
+      MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
       v8::String::Utf8Value v8str(value);
-      gtknotify_instance->icon = *v8str;
+      myllvm->icon = *v8str;
     }
 };
 
@@ -164,10 +150,10 @@ Because a Node.js extension can be loaded at runtime from a shared object, we ne
 so we do the following: */
 // See https://www.cloudkick.com/blog/2010/aug/23/writing-nodejs-native-extensions/ & http://www.freebsd.org/cgi/man.cgi?query=dlsym
 // Cause of name mangling in C++, we use extern C here
-v8::Persistent<FunctionTemplate> Gtknotify::persistent_function_template;
+v8::Persistent<FunctionTemplate> MyLLVM::persistent_function_template;
 extern "C" {
   static void init(Handle<Object> target) {
-    Gtknotify::Init(target);
+    MyLLVM::Init(target);
   }
   // @see http://github.com/ry/node/blob/v0.2.0/src/node.h#L101
   NODE_MODULE(gtknotify, init);
