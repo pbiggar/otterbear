@@ -44,6 +44,17 @@ So the rough order of implementations is ('-' is TODO, '+' is done)
       write everything else
     - rewrite interpreter using this
       - figure out how Pypy does this
+    - here's the plan:
+      - have quite a few IRs:
+        - AST
+        - bytecode
+        - MIR - static subset, equivalent to RPython
+        - LIR - basically LLVM
+      - For each operation in each IR, write the op in the lower-level IR. IE bytecode written in MIR
+        - can have calls to entire "functions" written in one of them
+      - But, use the same syntax for each one! That way they can all be interpreted by a JS interpreter!
+        - statically enforce/infer types for MIR
+      - for LIR, perhaps use a JS syntax for LLVM ops, or perhaps just write them in bitcode
 
   - expand the language
     - strings, objects
