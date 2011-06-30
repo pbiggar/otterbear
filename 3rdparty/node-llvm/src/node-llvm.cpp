@@ -156,7 +156,7 @@ extern "C" {
     MyLLVM::Init(target);
   }
   // @see http://github.com/ry/node/blob/v0.2.0/src/node.h#L101
-  NODE_MODULE(gtknotify, init);
+  NODE_MODULE(llvm, init);
 }
 
 
