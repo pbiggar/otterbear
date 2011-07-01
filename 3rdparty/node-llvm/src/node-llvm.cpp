@@ -3,63 +3,26 @@
 #include <string>
 
 /*
+ * LLVM wrapper API. In the longer term, maybe we should just copy ruby-llvm
+ * (if we had an FFI-like class to implement it with, that would be awesome).
+ */
 
-= V8 recap =
 
-More detailed info at http://code.google.com/apis/v8/embed.html
-
-== Context ==
-
-A context is an execution environment that allows separate, unrelated, JavaScript applications to run in a single instance of V8.
-Must be explicitly declared.
-
-== Handles ==
-
-Defines the lifetime of an object.
-
-Local (deleted when scope deleted),
-Persistent (deleted manually),
-Handle (parent class)
-
-== Handle scope ==
-
-A container that holds lots of handles. When handle scope's destructor is
-called (implicitly called when ~ called) all handles created within that scope
-are removed
-
-== Templates ==
-
-A template is a blueprint for JavaScript functions and objects in a context.
-You can use a template to wrap C++ functions and data structures within
-JavaScript objects so that they can be manipulated by JavaScript scripts. (i.e.
-a browser's DOM aka 'document')
-
-Function template: A function template is the blueprint for a single function.
-
-Object templates: Each function template has an associated object template.
-accessors/interceptor C++ callbacks
-
-*/
-
-//using namespace node;
 using namespace v8;
 
 class MyLLVM : node::ObjectWrap
 {
 private:
 public:
-  MyLLVM() {}
-  ~MyLLVM() {}
-  
   std::string title;
   std::string icon;
   
   // Holds our constructor function
-  static v8::Persistent<FunctionTemplate> persistent_function_template;
+  static Persistent<FunctionTemplate> pft;
 
-  // @Node.js calls Init() when you load the extension through require()
-  // Init() defines our constructor function and prototype methods It then
-  // binds our constructor function as a property of the target object Target
+  // Node.js calls Init() when you load the extension through require().
+  // Init() defines our constructor function and prototype methods. It then
+  // binds our constructor function as a property of the target object. Target
   // is the "target" onto which an extension is loaded.
   //
   // For example:
@@ -68,37 +31,33 @@ public:
   // call "new notify.Notification();"
   static void Init(Handle<Object> target) {
 
-    v8::HandleScope scope;
+    HandleScope scope;
 
     // Wrap our New() method so that it's accessible from Javascript
-    v8::Local<FunctionTemplate> local_function_template = v8::FunctionTemplate::New(New);
+    Local<FunctionTemplate> local_function_template = FunctionTemplate::New(New);
     
-    // Make it persistent and assign it to our object's
-    // persistent_function_template attribute
-    MyLLVM::persistent_function_template = v8::Persistent<FunctionTemplate>::New(local_function_template);
+    // Make it persistent and assign it to our object's pft attribute
+    pft = Persistent<FunctionTemplate>::New(local_function_template);
 
-    // Each JavaScript object keeps a reference to the C++ object for which
-    // it is a wrapper with an internal field.
-    MyLLVM::persistent_function_template->InstanceTemplate()->SetInternalFieldCount(1); // 1 since this is a constructor function
+    // Each JavaScript object keeps a reference to the C++ object for which it
+    // is a wrapper with an internal field.
+    pft->InstanceTemplate()->SetInternalFieldCount(1); // 1 since this is a constructor function
 
     // Set a class name for objects created with our constructor
-    MyLLVM::persistent_function_template->SetClassName(v8::String::NewSymbol("Notification"));
+    pft->SetClassName(String::NewSymbol("Notification"));
     
     // Set property accessors
-    MyLLVM::persistent_function_template->InstanceTemplate()->SetAccessor(
-        String::New("title"), GetTitle, SetTitle);
-    MyLLVM::persistent_function_template->InstanceTemplate()->SetAccessor(
-        String::New("icon"), GetIcon, SetIcon);
+    pft->InstanceTemplate()->SetAccessor(String::New("title"), GetTitle, SetTitle);
+    pft->InstanceTemplate()->SetAccessor(String::New("icon"), GetIcon, SetIcon);
     
-    // @Node.js macro to help bind C++ methods to Javascript methods
+    // Node.js macro to help bind C++ methods to Javascript methods
     // (see https://github.com/joyent/node/blob/v0.2.0/src/node.h#L34)
     // Arguments: our constructor function, Javascript method name, C++ method name
-    NODE_SET_PROTOTYPE_METHOD(MyLLVM::persistent_function_template, "send", Send);
+    NODE_SET_PROTOTYPE_METHOD(pft, "send", Send);
     
     // Set the "notification" property to the target and assign it to our
     // constructor function
-    target->Set(String::NewSymbol("notification"),
-                MyLLVM::persistent_function_template->GetFunction());
+    target->Set(String::NewSymbol("notification"), pft->GetFunction());
   }
 
   // new Notification();
@@ -122,47 +81,47 @@ public:
 
   // notification.send();
   // This is a method part of the constructor function's prototype
-  static v8::Handle<Value> Send(const Arguments& args)
+  static Handle<Value> Send(const Arguments& args)
   {
-    v8::HandleScope scope;
+    HandleScope scope;
 
     // Extract C++ object reference from "this" aka args.This() argument
     MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(args.This());
     
     // Convert first argument to V8 String
-    v8::String::Utf8Value v8str(args[0]);
+    String::Utf8Value v8str(args[0]);
     
     // Return value
-    return v8::Boolean::New(true);
+    return Boolean::New(true);
   }
   
   // notification.title
-  static v8::Handle<Value> GetTitle(v8::Local<v8::String> property, const v8::AccessorInfo& info)
+  static Handle<Value> GetTitle(Local<String> property, const AccessorInfo& info)
   {
     // Extract the C++ request object from the JavaScript wrapper.
     MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
-    return v8::String::New(myllvm->title.c_str());
+    return String::New(myllvm->title.c_str());
   }
 
   static void SetTitle(Local<String> property, Local<Value> value, const AccessorInfo& info)
   {
     MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
-    v8::String::Utf8Value v8str(value);
+    String::Utf8Value v8str(value);
     myllvm->title = *v8str;
   }
 
   // notification.icon
-  static v8::Handle<Value> GetIcon(v8::Local<v8::String> property, const v8::AccessorInfo& info)
+  static Handle<Value> GetIcon(Local<String> property, const AccessorInfo& info)
   {
     // Extract the C++ request object from the JavaScript wrapper.
     MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
-    return v8::String::New(myllvm->icon.c_str());
+    return String::New(myllvm->icon.c_str());
   }
 
   static void SetIcon(Local<String> property, Local<Value> value, const AccessorInfo& info)
   {
     MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
-    v8::String::Utf8Value v8str(value);
+    String::Utf8Value v8str(value);
     myllvm->icon = *v8str;
   }
 };
@@ -175,7 +134,6 @@ public:
  * at runtime from a shared object, we need a symbol that the dlsym function
  * can find.
  */
-v8::Persistent<FunctionTemplate> MyLLVM::persistent_function_template;
 extern "C" {
 
 static void
@@ -188,5 +146,3 @@ init(Handle<Object> target)
 NODE_MODULE(llvm, init);
 
 }
-
-
