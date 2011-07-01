@@ -1,6 +1,21 @@
+#include <string>
+
 #include <v8.h>
 #include <node.h>
-#include <string>
+
+#include "llvm/Analysis/Passes.h"
+#include "llvm/Analysis/Verifier.h"
+#include "llvm/DerivedTypes.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/JIT.h"
+#include "llvm/LLVMContext.h"
+#include "llvm/Module.h"
+#include "llvm/PassManager.h"
+#include "llvm/Support/IRBuilder.h"
+#include "llvm/Target/TargetData.h"
+#include "llvm/Target/TargetSelect.h"
+#include "llvm/Transforms/Scalar.h"
+
 
 /*
  * LLVM wrapper API. In the longer term, maybe we should just copy ruby-llvm
@@ -8,17 +23,27 @@
  */
 
 
-using namespace v8;
+llvm::Value *Error(const char *Str) { exit(-1); }
 
 class LLVM : node::ObjectWrap
 {
 private:
 public:
-  std::string title;
-  std::string icon;
+  llvm::LLVMContext cx;
+  llvm::IRBuilder<> builder;
+  llvm::Module module;
+
+  LLVM() : 
+    builder(cx),
+    module("LLVM::LLVM",cx)
+  {
+    llvm::InitializeNativeTarget();
+  }
+
+
   
   // Holds our constructor function
-  static Persistent<FunctionTemplate> pft;
+  static v8::Persistent<v8::FunctionTemplate> pft;
 
   // Node.js calls Init() when you load the extension through require().
   // Init() defines our constructor function and prototype methods. It then
@@ -29,105 +54,71 @@ public:
   //   var notify = require("../build/default/gtknotify.node");
   // will bind our constructor function to notify.Notification so that we can
   // call "new notify.Notification();"
-  static void Init(Handle<Object> target) {
+  static void Init(v8::Handle<v8::Object> target)
+  {
+    initializeV8Object(target);
+  }
 
-    HandleScope scope;
+  static void initializeV8Object (v8::Handle<v8::Object> target)
+  {
+    v8::HandleScope scope;
 
-    // Wrap our New() method so that it's accessible from Javascript
-    Local<FunctionTemplate> local_function_template = FunctionTemplate::New(New);
-    
     // Make it persistent and assign it to our object's pft attribute
-    pft = Persistent<FunctionTemplate>::New(local_function_template);
+    pft = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(LLVM::New));
 
     // Each JavaScript object keeps a reference to the C++ object for which it
     // is a wrapper with an internal field.
     pft->InstanceTemplate()->SetInternalFieldCount(1); // 1 since this is a constructor function
 
     // Set a class name for objects created with our constructor
-    pft->SetClassName(String::NewSymbol("Notification"));
+    pft->SetClassName(v8::String::NewSymbol("LLVM"));
     
     // Set property accessors
-    pft->InstanceTemplate()->SetAccessor(String::New("title"), GetTitle, SetTitle);
-    pft->InstanceTemplate()->SetAccessor(String::New("icon"), GetIcon, SetIcon);
+//    pft->InstanceTemplate()->SetAccessor(String::New("title"), GetTitle, SetTitle);
+//    pft->InstanceTemplate()->SetAccessor(String::New("icon"), GetIcon, SetIcon);
     
-    // Node.js macro to help bind C++ methods to Javascript methods
-    // (see https://github.com/joyent/node/blob/v0.2.0/src/node.h#L34)
-    // Arguments: our constructor function, Javascript method name, C++ method name
-    NODE_SET_PROTOTYPE_METHOD(pft, "send", Send);
+    NODE_SET_PROTOTYPE_METHOD(pft, "doubleValue", doubleValue);
+//    NODE_SET_PROTOTYPE_METHOD(pft, "add", add);
+//    NODE_SET_PROTOTYPE_METHOD(pft, "subtract", add);
+//    NODE_SET_PROTOTYPE_METHOD(pft, "signature", signature);
     
     // Set the "notification" property to the target and assign it to our
     // constructor function
-    target->Set(String::NewSymbol("notification"), pft->GetFunction());
+    target->Set(v8::String::NewSymbol("LLVM"), pft->GetFunction());
   }
 
-  // new Notification();
+  // new LLVM();
   // This is our constructor function. It instantiate a C++ LLVM object and
   // returns a Javascript handle to this object.
-  static Handle<Value> New(const Arguments& args)
+  static v8::Handle<v8::Value>
+  New(const v8::Arguments& args)
   {
-    HandleScope scope;
-    LLVM* myllvm = new LLVM();
-    // Set some default values
-    
-    // Wrap our C++ object as a Javascript object
-    myllvm->Wrap(args.This());
-    
-    
-    // Our constructor function returns a Javascript object which is a
-    // wrapper for our C++ object, This is the expected behavior when calling
-    // a constructor function with the new operator in Javascript.
+    v8::HandleScope scope;
+
+    LLVM* l = new LLVM();
+    l->Wrap(args.This());
     return args.This();
   }
 
-  // notification.send();
+  // LLVM.doubleValue
   // This is a method part of the constructor function's prototype
-  static Handle<Value> Send(const Arguments& args)
+  static v8::Handle<v8::Value>
+  doubleValue(const v8::Arguments& args)
   {
-    HandleScope scope;
+    v8::HandleScope scope;
 
-    // Extract C++ object reference from "this" aka args.This() argument
-    LLVM* myllvm = node::ObjectWrap::Unwrap<LLVM>(args.This());
-    
-    // Convert first argument to V8 String
-    String::Utf8Value v8str(args[0]);
-    
-    // Return value
-    return Boolean::New(true);
-  }
-  
-  // notification.title
-  static Handle<Value> GetTitle(Local<String> property, const AccessorInfo& info)
-  {
-    // Extract the C++ request object from the JavaScript wrapper.
-    LLVM* myllvm = node::ObjectWrap::Unwrap<LLVM>(info.Holder());
-    return String::New(myllvm->title.c_str());
-  }
+    double arg = args[0]->NumberValue();
 
-  static void SetTitle(Local<String> property, Local<Value> value, const AccessorInfo& info)
-  {
-    LLVM* myllvm = node::ObjectWrap::Unwrap<LLVM>(info.Holder());
-    String::Utf8Value v8str(value);
-    myllvm->title = *v8str;
-  }
-
-  // notification.icon
-  static Handle<Value> GetIcon(Local<String> property, const AccessorInfo& info)
-  {
-    // Extract the C++ request object from the JavaScript wrapper.
-    LLVM* myllvm = node::ObjectWrap::Unwrap<LLVM>(info.Holder());
-    return String::New(myllvm->icon.c_str());
-  }
-
-  static void SetIcon(Local<String> property, Local<Value> value, const AccessorInfo& info)
-  {
-    LLVM* myllvm = node::ObjectWrap::Unwrap<LLVM>(info.Holder());
-    String::Utf8Value v8str(value);
-    myllvm->icon = *v8str;
+    LLVM* l = Unwrap<LLVM>(args.This());
+   
+    llvm::Value* result = llvm::ConstantFP::get(l->cx, llvm::APFloat(arg));
+    return v8::External::Wrap(result);
   }
 };
 
+v8::Persistent<v8::FunctionTemplate> LLVM::pft;
+ 
 
-// See https://www.cloudkick.com/blog/2010/aug/23/writing-nodejs-native-extensions/ & http://www.freebsd.org/cgi/man.cgi?query=dlsym
 /* 
  * Thats it for actual interfacing with v8, finally we need to let Node.js know
  * how to dynamically load our code. Because a Node.js extension can be loaded
@@ -137,7 +128,7 @@ public:
 extern "C" {
 
 static void
-init(Handle<Object> target)
+init(v8::Handle<v8::Object> target)
 {
   LLVM::Init(target);
 }

@@ -9,6 +9,31 @@ util = require("./util")
 var_dump = util.var_dump
 fs = require("fs")
 
+llvm = require("./3rdparty/node-llvm/build/default/llvm.node")
+
+llvm = new llvm.LLVM()
+console.log(llvm)
+
+zero = llvm.doubleValue(0.0)
+console.log(zero)
+
+#one = llvm.doubleValue(1.0)
+#two = llvm.doubleValue(2.0)
+#three = llvm.add(one, two)
+#six = llvm.add(three, three)
+#five = llvm.subtract(six, one)
+#eleven = llvm.add(six, five)
+
+#sig  = llvm.signature(llvm.doubleType, [llvm.doubleType, llvm.doubleType])
+#func = llvm.function(sig)
+#bb = func.basicBlock()
+#bb.return(eleven)
+
+#pointer = func.functionPointer()
+#pointer.call()
+
+
+
 
 input = fs.readFileSync("test.bc", 'utf-8')
 
@@ -18,8 +43,8 @@ for k,v of user_functions
   funktions[k] = v
 
 #engine = new interpreter.Interpreter()
-engine = new compiler.Compiler()
-engine.compile(funktions)
+#engine = new compiler.Compiler()
+#engine.compile(funktions)
 #rt = new runtime.Runtime(engine, funktions)
 
 #rt.call('main', [])
