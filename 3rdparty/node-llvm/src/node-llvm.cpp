@@ -10,7 +10,7 @@
 
 using namespace v8;
 
-class MyLLVM : node::ObjectWrap
+class LLVM : node::ObjectWrap
 {
 private:
 public:
@@ -61,12 +61,12 @@ public:
   }
 
   // new Notification();
-  // This is our constructor function. It instantiate a C++ MyLLVM object and
+  // This is our constructor function. It instantiate a C++ LLVM object and
   // returns a Javascript handle to this object.
   static Handle<Value> New(const Arguments& args)
   {
     HandleScope scope;
-    MyLLVM* myllvm = new MyLLVM();
+    LLVM* myllvm = new LLVM();
     // Set some default values
     
     // Wrap our C++ object as a Javascript object
@@ -86,7 +86,7 @@ public:
     HandleScope scope;
 
     // Extract C++ object reference from "this" aka args.This() argument
-    MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(args.This());
+    LLVM* myllvm = node::ObjectWrap::Unwrap<LLVM>(args.This());
     
     // Convert first argument to V8 String
     String::Utf8Value v8str(args[0]);
@@ -99,13 +99,13 @@ public:
   static Handle<Value> GetTitle(Local<String> property, const AccessorInfo& info)
   {
     // Extract the C++ request object from the JavaScript wrapper.
-    MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
+    LLVM* myllvm = node::ObjectWrap::Unwrap<LLVM>(info.Holder());
     return String::New(myllvm->title.c_str());
   }
 
   static void SetTitle(Local<String> property, Local<Value> value, const AccessorInfo& info)
   {
-    MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
+    LLVM* myllvm = node::ObjectWrap::Unwrap<LLVM>(info.Holder());
     String::Utf8Value v8str(value);
     myllvm->title = *v8str;
   }
@@ -114,13 +114,13 @@ public:
   static Handle<Value> GetIcon(Local<String> property, const AccessorInfo& info)
   {
     // Extract the C++ request object from the JavaScript wrapper.
-    MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
+    LLVM* myllvm = node::ObjectWrap::Unwrap<LLVM>(info.Holder());
     return String::New(myllvm->icon.c_str());
   }
 
   static void SetIcon(Local<String> property, Local<Value> value, const AccessorInfo& info)
   {
-    MyLLVM* myllvm = node::ObjectWrap::Unwrap<MyLLVM>(info.Holder());
+    LLVM* myllvm = node::ObjectWrap::Unwrap<LLVM>(info.Holder());
     String::Utf8Value v8str(value);
     myllvm->icon = *v8str;
   }
@@ -139,7 +139,7 @@ extern "C" {
 static void
 init(Handle<Object> target)
 {
-  MyLLVM::Init(target);
+  LLVM::Init(target);
 }
 
 // @see http://github.com/ry/node/blob/v0.2.0/src/node.h#L101
