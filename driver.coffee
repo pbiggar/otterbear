@@ -12,6 +12,13 @@ fs = require("fs")
 llvm = require("./3rdparty/node-llvm/build/default/llvm.node")
 
 llvm = new llvm.LLVM()
+cx = llvm.getGlobalContext()
+builder = llvm.IRBuilder(cx)
+zero = llvm.ConstantFPget(cx, llvm.apfloat(0.0))
+one = llvm.ConstantFPget(cx, llvm.apfloat(1.0))
+two = llvm.ConstantFPget(cx, llvm.apfloat(2.0))
+module m = new llvm.Module("test app", cx)
+
 console.log(llvm)
 
 zero = llvm.doubleValue(0.0)

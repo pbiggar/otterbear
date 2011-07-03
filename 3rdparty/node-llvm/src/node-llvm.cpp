@@ -30,17 +30,19 @@
 
 llvm::Value *Error(const char *Str) { exit(-1); }
 
-template<typename T>
-class LLVMObject : node::ObjectWrap
+template<typename T> T
+U(v8::Handle<v8::Value> v)
 {
-  // TODO: add type safety, probably a combination of static (via templates)
-  // and dynamaic (via type signature members in debug mode).
-  LLVMObject<T>(T storage)
-  {
-    this->storage = storage;
-  }
+  return static_cast<T>(v8::External::Unwrap(v));
+}
 
-  T storage;
+//  llvm::IRBuilder<> builder;
+//  llvm::Module module;
+//    builder(cx),
+class LLVM : node::ObjectWrap
+{
+public:
+  LLVM() {}
 
   static v8::Handle<v8::Value>
   ConstantFPGet(const v8::Arguments& args)
@@ -48,14 +50,12 @@ class LLVMObject : node::ObjectWrap
     v8::HandleScope scope;
 
     // args
-    llvm::LLVMContext* arg0 = Unwrap<llvm::LLVMContext>(args[0]);
-    llvm::APFloat* arg1 = Unwrap<llvm::APFloat>(args[1]);
+    llvm::LLVMContext* arg0 = U<llvm::LLVMContext*>(args[0]);
+    llvm::APFloat* arg1 = U<llvm::APFloat*>(args[1]);
 
     llvm::Value* result = llvm::ConstantFP::get(*arg0, *arg1);
 
-    LLVMObject<llvm::Value*>* wrapper = new LLVMObject<llvm::Value*>(result);
-    v8::Handle<v8::Value> r(wrapper);
-    return r;
+    return v8::External::Wrap(result);
   }
 
   static v8::Handle<v8::Value>
@@ -66,9 +66,9 @@ class LLVMObject : node::ObjectWrap
     // args
     double arg0 = args[0]->NumberValue();
 
-    llvm::Value* result = llvm::APFloat(arg0);
+    llvm::APFloat* result = new llvm::APFloat(arg0);
 
-    return new LLVMObject(result);
+    return v8::External::Wrap(result);
   }
 
   static v8::Handle<v8::Value>
@@ -80,7 +80,7 @@ class LLVMObject : node::ObjectWrap
 
     llvm::LLVMContext& result = llvm::getGlobalContext();
 
-    return new LLVMObject(result);
+    return v8::External::Wrap(&result); // TODO
   }
 
   static v8::Handle<v8::Value>
@@ -90,33 +90,13 @@ class LLVMObject : node::ObjectWrap
 
     // args
     const char* arg0 = args[0]->ToString()->GetExternalAsciiStringResource()->data();
-    llvm::LLVMContext* arg1 = Unwrap<llvm::LLVMContext>(args[1]);
+    llvm::LLVMContext* arg1 = U<llvm::LLVMContext*>(args[1]);
 
     llvm::Module* result = new llvm::Module(arg0, *arg1);
 
-    return new LLVMObject(result);
+    return v8::External::Wrap(result);
   }
-};
 
-//  llvm::IRBuilder<> builder;
-//  llvm::Module module;
-//    builder(cx),
-class LLVM : node::ObjectWrap
-{
-public:
-  LLVM() {}
-
-  static void Init(v8::Handle<v8::Object> target)
-  {
-    v8::HandleScope scope;
-
-    v8::Local<v8::String> symbol = v8::String::NewSymbol("LLVM");
-
-    pft = v8::Persistent<v8::FunctionTemplate>::New(v8::FunctionTemplate::New(LLVM::New));
-    pft->InstanceTemplate()->SetInternalFieldCount(1);
-    pft->SetClassName(symbol);
-    target->Set(symbol, pft->GetFunction());
-  }
 
   // new LLVM();
   static v8::Handle<v8::Value>
@@ -127,6 +107,18 @@ public:
     LLVM* l = new LLVM();
     l->Wrap(args.This());
     return args.This();
+  }
+
+  static void Init(v8::Handle<v8::Object> target)
+  {
+    using namespace v8;
+    HandleScope scope;
+
+    pft = Persistent<FunctionTemplate>::New(FunctionTemplate::New(LLVM::New));
+
+    pft->InstanceTemplate()->SetInternalFieldCount(1);
+    pft->SetClassName(String::NewSymbol("LLVM"));
+    target->Set(String::NewSymbol("LLVM"), pft->GetFunction());
   }
 
 private:
