@@ -97,6 +97,19 @@ public:
     return v8::External::Wrap(result);
   }
 
+  static v8::Handle<v8::Value>
+  IRBuilder(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
+
+    // args
+    llvm::LLVMContext* arg0 = U<llvm::LLVMContext*>(args[0]);
+
+    llvm::IRBuilder<>* result = new llvm::IRBuilder<>(*arg0);
+
+    return v8::External::Wrap(result);
+  }
+
 
   // new LLVM();
   static v8::Handle<v8::Value>
@@ -118,7 +131,15 @@ public:
 
     pft->InstanceTemplate()->SetInternalFieldCount(1);
     pft->SetClassName(String::NewSymbol("LLVM"));
+
     target->Set(String::NewSymbol("LLVM"), pft->GetFunction());
+
+    // Functions
+    pft->InstanceTemplate()->Set("getGlobalContext", v8::FunctionTemplate::New(getGlobalContext));
+    pft->InstanceTemplate()->Set("IRBuilder", v8::FunctionTemplate::New(IRBuilder));
+    pft->InstanceTemplate()->Set("APFloat", v8::FunctionTemplate::New(APFloat));
+    pft->InstanceTemplate()->Set("ConstantFPGet", v8::FunctionTemplate::New(ConstantFPGet));
+    pft->InstanceTemplate()->Set("Module", v8::FunctionTemplate::New(Module));
   }
 
 private:
