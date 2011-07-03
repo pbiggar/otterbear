@@ -15,10 +15,14 @@ llvm = new llvm.LLVM()
 console.log(llvm)
 
 zero = llvm.doubleValue(0.0)
-console.log(zero)
+one = llvm.doubleValue(1.0)
+two = llvm.doubleValue(2.0)
 
-#one = llvm.doubleValue(1.0)
-#two = llvm.doubleValue(2.0)
+bb.return(one)
+
+#pointer = func.functionPointer()
+#pointer.call()
+#
 #three = llvm.add(one, two)
 #six = llvm.add(three, three)
 #five = llvm.subtract(six, one)
