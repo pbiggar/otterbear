@@ -24,11 +24,17 @@ f =  llvm.AddFunction(m, 'main', ft)
 bb = llvm.AppendBasicBlockInContext(cx, f, 'entry')
 llvm.PositionBuilderAtEnd(builder, bb)
 llvm.BuildRet(builder, zero)
-
-llvm.DumpModule(m)
-llvm.VerifyFunction(f)
+[success, ee, str] = llvm.CreateJITCompilerForModule(m, 0)
 
 console.log(llvm)
+console.log(success)
+console.log(ee)
+console.log(str)
+
+llvm.VerifyFunction(f)
+llvm.DumpModule(m)
+
+console.log("DONE")
 
 
 
@@ -39,11 +45,6 @@ console.log(llvm)
 #six = llvm.add(three, three)
 #five = llvm.subtract(six, one)
 #eleven = llvm.add(six, five)
-
-#sig  = llvm.signature(llvm.doubleType, [llvm.doubleType, llvm.doubleType])
-#func = llvm.function(sig)
-#bb = func.basicBlock()
-#bb.return(eleven)
 
 #pointer = func.functionPointer()
 #pointer.call()

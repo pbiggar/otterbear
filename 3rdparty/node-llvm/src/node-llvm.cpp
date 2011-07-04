@@ -5,6 +5,7 @@
 
 #include "llvm-c/Core.h"
 #include "llvm-c/Analysis.h"
+#include "llvm-c/ExecutionEngine.h"
 
 
 /*
@@ -25,6 +26,36 @@ print(const char* function, const char* type, T t)
 {
 //  printf("%p (%s,%s)\n", t, function, type);
   return t;
+}
+
+template<typename T> v8::Handle<v8::Value>
+W(T v)
+{
+  return v8::External::Wrap(v);
+}
+
+template<> v8::Handle<v8::Value> 
+W<const char*>(const char* v)
+{
+  return v8::String::New(v);
+}
+
+template<> v8::Handle<v8::Value> 
+W<double>(double v)
+{
+  return v8::Number::New(v);
+}
+
+template<> v8::Handle<v8::Value> 
+W<unsigned int>(unsigned int v)
+{
+  return v8::Number::New(v);
+}
+
+template<> v8::Handle<v8::Value> 
+W<int>(int v)
+{
+  return v8::Number::New(v);
 }
 
 
@@ -63,22 +94,37 @@ class LLVM : node::ObjectWrap
 public:
   LLVM() {}
 
-#define ARG(I,TYPE) TYPE arg##I = print(NULL, "arg", U<TYPE>(args[I]));
+#define OUTARG(I,TYPE) TYPE arg##I##_storage = NULL; TYPE* arg##I = &arg##I##_storage;
+#define ARG(I,TYPE) TYPE arg##I = print(NULL, "arg" #I, U<TYPE>(args[I]));
 
-#define RETURNN(FUNCTION,ARGS) return scope.Close(v8::External::Wrap(print(#FUNCTION, "return", FUNCTION ARGS)));
-    
-#define RETURN0(FUNCTION) RETURNN(FUNCTION, ());
-#define RETURN1(FUNCTION) RETURNN(FUNCTION, (arg0));
-#define RETURN2(FUNCTION) RETURNN(FUNCTION, (arg0, arg1));
-#define RETURN3(FUNCTION) RETURNN(FUNCTION, (arg0, arg1, arg2));
-#define RETURN4(FUNCTION) RETURNN(FUNCTION, (arg0, arg1, arg2, arg3));
+#define CALLN(FUNCTION,ARGS) v8::Handle<v8::Value> result = W((print(#FUNCTION, "call", FUNCTION ARGS)));
 
-#define RETURNNNULL(FUNCTION,ARGS) FUNCTION ARGS; return v8::Undefined();
-#define RETURN0NULL(FUNCTION) RETURNNNULL(FUNCTION, ());
-#define RETURN1NULL(FUNCTION) RETURNNNULL(FUNCTION, (arg0));
-#define RETURN2NULL(FUNCTION) RETURNNNULL(FUNCTION, (arg0, arg1));
-#define RETURN3NULL(FUNCTION) RETURNNNULL(FUNCTION, (arg0, arg1, arg2));
-#define RETURN4NULL(FUNCTION) RETURNNNULL(FUNCTION, (arg0, arg1, arg2, arg3));
+#define CALL0(FUNCTION) CALLN(FUNCTION, ());
+#define CALL1(FUNCTION) CALLN(FUNCTION, (arg0));
+#define CALL2(FUNCTION) CALLN(FUNCTION, (arg0, arg1));
+#define CALL3(FUNCTION) CALLN(FUNCTION, (arg0, arg1, arg2));
+#define CALL4(FUNCTION) CALLN(FUNCTION, (arg0, arg1, arg2, arg3));
+
+#define CALLNVOID(FUNCTION,ARGS) FUNCTION ARGS;
+
+#define CALL0VOID(FUNCTION) CALLNVOID(FUNCTION, ());
+#define CALL1VOID(FUNCTION) CALLNVOID(FUNCTION, (arg0));
+#define CALL2VOID(FUNCTION) CALLNVOID(FUNCTION, (arg0, arg1));
+#define CALL3VOID(FUNCTION) CALLNVOID(FUNCTION, (arg0, arg1, arg2));
+#define CALL4VOID(FUNCTION) CALLNVOID(FUNCTION, (arg0, arg1, arg2, arg3));
+
+#define RETURN0() return v8::Undefined()
+#define RETURN1() return scope.Close(result)
+#define RETURN2(I1) v8::Local<v8::Array> array_result = v8::Array::New(); \
+  array_result->Set(0, result); \
+  array_result->Set(1, W(arg##I1##_storage)); \
+  return scope.Close(array_result)
+#define RETURN3(I1,I2) v8::Local<v8::Array> array_result = v8::Array::New(); \
+  array_result->Set(0, result); \
+  array_result->Set(1, W(arg##I1##_storage)); \
+  array_result->Set(2, W(arg##I2##_storage)); \
+  return scope.Close(array_result)
+
 
   static v8::Handle<v8::Value>
   ConstReal(const v8::Arguments& args)
@@ -88,7 +134,8 @@ public:
     ARG(0, LLVMTypeRef);
     ARG(1, double);
 
-    RETURN2(LLVMConstReal);
+    CALL2(LLVMConstReal);
+    RETURN1();
   }
 
   static v8::Handle<v8::Value>
@@ -98,7 +145,8 @@ public:
 
     ARG(0, LLVMContextRef);
 
-    RETURN1(LLVMDoubleTypeInContext);
+    CALL1(LLVMDoubleTypeInContext);
+    RETURN1();
   }
 
   static v8::Handle<v8::Value>
@@ -106,7 +154,8 @@ public:
   {
     v8::HandleScope scope;
 
-    RETURN0(LLVMGetGlobalContext);
+    CALL0(LLVMGetGlobalContext);
+    RETURN1();
   }
 
   static v8::Handle<v8::Value>
@@ -117,7 +166,8 @@ public:
     ARG(0, const char*);
     ARG(1, LLVMContextRef);
 
-    RETURN2(LLVMModuleCreateWithNameInContext);
+    CALL2(LLVMModuleCreateWithNameInContext);
+    RETURN1();
   }
 
   static v8::Handle<v8::Value>
@@ -126,7 +176,8 @@ public:
     v8::HandleScope scope;
 
     ARG(0, LLVMContextRef);
-    RETURN1(LLVMCreateBuilderInContext);
+    CALL1(LLVMCreateBuilderInContext);
+    RETURN1();
   }
 
   static v8::Handle<v8::Value>
@@ -147,7 +198,8 @@ public:
 
     ARG(3, LLVMBool);
 
-    RETURN4(LLVMFunctionType);
+    CALL4(LLVMFunctionType);
+    RETURN1();
   }
 
   static v8::Handle<v8::Value>
@@ -159,7 +211,8 @@ public:
     ARG(1, const char*);
     ARG(2, LLVMTypeRef);
 
-    RETURN3(LLVMAddFunction);
+    CALL3(LLVMAddFunction);
+    RETURN1();
   }
 
   static v8::Handle<v8::Value>
@@ -171,7 +224,8 @@ public:
     ARG(1, LLVMValueRef);
     ARG(2, const char*);
 
-    RETURN3(LLVMAppendBasicBlockInContext);
+    CALL3(LLVMAppendBasicBlockInContext);
+    RETURN1();
   }
 
   static v8::Handle<v8::Value>
@@ -182,7 +236,8 @@ public:
     ARG(0, LLVMBuilderRef);
     ARG(1, LLVMBasicBlockRef);
 
-    RETURN2NULL(LLVMPositionBuilderAtEnd);
+    CALL2VOID(LLVMPositionBuilderAtEnd);
+    RETURN0();
   }
 
   static v8::Handle<v8::Value>
@@ -193,7 +248,8 @@ public:
     ARG(0, LLVMBuilderRef);
     ARG(1, LLVMValueRef);
 
-    RETURN2(LLVMBuildRet);
+    CALL2(LLVMBuildRet);
+    RETURN1();
   }
 
   static v8::Handle<v8::Value>
@@ -203,7 +259,8 @@ public:
 
     ARG(0, LLVMModuleRef);
 
-    RETURN1NULL(LLVMDumpModule);
+    CALL1VOID(LLVMDumpModule);
+    RETURN0();
   }
 
   static v8::Handle<v8::Value>
@@ -214,10 +271,28 @@ public:
     ARG(0, LLVMValueRef);
     LLVMVerifierFailureAction arg1 = LLVMPrintMessageAction;
 
-    RETURN2NULL(LLVMVerifyFunction);
+    CALL2VOID(LLVMVerifyFunction);
+    RETURN0();
   }
 
+  static v8::Handle<v8::Value>
+  CreateJITCompilerForModule(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
 
+    LLVMExecutionEngineRef arg0_storage = NULL;
+    LLVMExecutionEngineRef* arg0 = &arg0_storage;
+
+    ARG(1, LLVMModuleRef);
+    ARG(2, int);
+
+    char* arg3_storage = NULL;
+    char** arg3 = &arg3_storage;
+
+    CALL4(LLVMCreateJITCompilerForModule);
+
+    RETURN3(0, 3);
+  }
 
   static v8::Handle<v8::Value>
   New(const v8::Arguments& args)
@@ -254,6 +329,7 @@ public:
     DECLARE(BuildRet);
     DECLARE(VerifyFunction);
     DECLARE(DumpModule);
+    DECLARE(CreateJITCompilerForModule);
 #undef DECLARE
   }
 
