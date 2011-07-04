@@ -23,14 +23,14 @@ ft =  llvm.FunctionType(floatType, [floatType, floatType], false)
 f =  llvm.AddFunction(m, 'main', ft)
 bb = llvm.AppendBasicBlockInContext(cx, f, 'entry')
 llvm.PositionBuilderAtEnd(builder, bb)
+llvm.BuildRet(builder, zero)
+
+llvm.DumpModule(m)
+llvm.VerifyFunction(f)
 
 console.log(llvm)
 
-zero = llvm.doubleValue(0.0)
-one = llvm.doubleValue(1.0)
-two = llvm.doubleValue(2.0)
 
-bb.return(one)
 
 #pointer = func.functionPointer()
 #pointer.call()

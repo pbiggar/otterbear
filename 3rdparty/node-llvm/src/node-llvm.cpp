@@ -4,6 +4,8 @@
 #include <node.h>
 
 #include "llvm-c/Core.h"
+#include "llvm-c/Analysis.h"
+
 
 /*
  * LLVM wrapper API. In the longer term, maybe we should just copy ruby-llvm
@@ -17,6 +19,14 @@
 
 
 llvm::Value *Error(const char *Str) { exit(-1); }
+
+template<typename T> T
+print(const char* function, const char* type, T t)
+{
+//  printf("%p (%s,%s)\n", t, function, type);
+  return t;
+}
+
 
 template<typename T> T
 U(v8::Handle<v8::Value> v)
@@ -53,16 +63,17 @@ class LLVM : node::ObjectWrap
 public:
   LLVM() {}
 
-#define ARG(I,TYPE) TYPE arg##I = U<TYPE>(args[I]);
+#define ARG(I,TYPE) TYPE arg##I = print(NULL, "arg", U<TYPE>(args[I]));
 
-#define RETURNN(TYPE,ARGS) return v8::External::Wrap(TYPE ARGS);
+#define RETURNN(FUNCTION,ARGS) return scope.Close(v8::External::Wrap(print(#FUNCTION, "return", FUNCTION ARGS)));
+    
 #define RETURN0(FUNCTION) RETURNN(FUNCTION, ());
 #define RETURN1(FUNCTION) RETURNN(FUNCTION, (arg0));
 #define RETURN2(FUNCTION) RETURNN(FUNCTION, (arg0, arg1));
 #define RETURN3(FUNCTION) RETURNN(FUNCTION, (arg0, arg1, arg2));
 #define RETURN4(FUNCTION) RETURNN(FUNCTION, (arg0, arg1, arg2, arg3));
 
-#define RETURNNNULL(TYPE,ARGS) TYPE ARGS; return v8::Undefined();
+#define RETURNNNULL(FUNCTION,ARGS) FUNCTION ARGS; return v8::Undefined();
 #define RETURN0NULL(FUNCTION) RETURNNNULL(FUNCTION, ());
 #define RETURN1NULL(FUNCTION) RETURNNNULL(FUNCTION, (arg0));
 #define RETURN2NULL(FUNCTION) RETURNNNULL(FUNCTION, (arg0, arg1));
@@ -115,7 +126,7 @@ public:
     v8::HandleScope scope;
 
     ARG(0, LLVMContextRef);
-    RETURN1(LLVMBuilderRef);
+    RETURN1(LLVMCreateBuilderInContext);
   }
 
   static v8::Handle<v8::Value>
@@ -174,6 +185,38 @@ public:
     RETURN2NULL(LLVMPositionBuilderAtEnd);
   }
 
+  static v8::Handle<v8::Value>
+  BuildRet(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
+
+    ARG(0, LLVMBuilderRef);
+    ARG(1, LLVMValueRef);
+
+    RETURN2(LLVMBuildRet);
+  }
+
+  static v8::Handle<v8::Value>
+  DumpModule(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
+
+    ARG(0, LLVMModuleRef);
+
+    RETURN1NULL(LLVMDumpModule);
+  }
+
+  static v8::Handle<v8::Value>
+  VerifyFunction(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
+
+    ARG(0, LLVMValueRef);
+    LLVMVerifierFailureAction arg1 = LLVMPrintMessageAction;
+
+    RETURN2NULL(LLVMVerifyFunction);
+  }
+
 
 
   static v8::Handle<v8::Value>
@@ -208,6 +251,9 @@ public:
     DECLARE(AppendBasicBlockInContext);
     DECLARE(CreateBuilderInContext);
     DECLARE(PositionBuilderAtEnd);
+    DECLARE(BuildRet);
+    DECLARE(VerifyFunction);
+    DECLARE(DumpModule);
 #undef DECLARE
   }
 
