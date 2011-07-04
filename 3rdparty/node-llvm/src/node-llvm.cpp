@@ -62,6 +62,13 @@ public:
 #define RETURN3(FUNCTION) RETURNN(FUNCTION, (arg0, arg1, arg2));
 #define RETURN4(FUNCTION) RETURNN(FUNCTION, (arg0, arg1, arg2, arg3));
 
+#define RETURNNNULL(TYPE,ARGS) TYPE ARGS; return v8::Undefined();
+#define RETURN0NULL(FUNCTION) RETURNNNULL(FUNCTION, ());
+#define RETURN1NULL(FUNCTION) RETURNNNULL(FUNCTION, (arg0));
+#define RETURN2NULL(FUNCTION) RETURNNNULL(FUNCTION, (arg0, arg1));
+#define RETURN3NULL(FUNCTION) RETURNNNULL(FUNCTION, (arg0, arg1, arg2));
+#define RETURN4NULL(FUNCTION) RETURNNNULL(FUNCTION, (arg0, arg1, arg2, arg3));
+
   static v8::Handle<v8::Value>
   ConstReal(const v8::Arguments& args)
   {
@@ -156,6 +163,17 @@ public:
     RETURN3(LLVMAppendBasicBlockInContext);
   }
 
+  static v8::Handle<v8::Value>
+  PositionBuilderAtEnd(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
+
+    ARG(0, LLVMBuilderRef);
+    ARG(1, LLVMBasicBlockRef);
+
+    RETURN2NULL(LLVMPositionBuilderAtEnd);
+  }
+
 
 
   static v8::Handle<v8::Value>
@@ -182,13 +200,14 @@ public:
 
 #define DECLARE(NAME) pft->InstanceTemplate()->Set(#NAME, v8::FunctionTemplate::New(NAME));
     DECLARE(GetGlobalContext);
-    DECLARE(CreateBuilderInContext);
     DECLARE(ModuleCreateWithNameInContext);
     DECLARE(DoubleTypeInContext);
     DECLARE(ConstReal);
     DECLARE(FunctionType);
     DECLARE(AddFunction);
     DECLARE(AppendBasicBlockInContext);
+    DECLARE(CreateBuilderInContext);
+    DECLARE(PositionBuilderAtEnd);
 #undef DECLARE
   }
 

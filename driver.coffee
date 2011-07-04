@@ -22,6 +22,7 @@ m = llvm.ModuleCreateWithNameInContext("test app", cx)
 ft =  llvm.FunctionType(floatType, [floatType, floatType], false)
 f =  llvm.AddFunction(m, 'main', ft)
 bb = llvm.AppendBasicBlockInContext(cx, f, 'entry')
+llvm.PositionBuilderAtEnd(builder, bb)
 
 console.log(llvm)
 
