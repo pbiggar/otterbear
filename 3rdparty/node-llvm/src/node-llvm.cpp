@@ -24,8 +24,8 @@ U(v8::Handle<v8::Value> v)
   return static_cast<T>(v8::External::Unwrap(v));
 }
 
-template<> char*
-U<char*>(v8::Handle<v8::Value> v)
+template<> const char*
+U<const char*>(v8::Handle<v8::Value> v)
 {
   return *v8::String::AsciiValue(v);
 }
@@ -96,7 +96,7 @@ public:
   {
     v8::HandleScope scope;
 
-    ARG(0, char*);
+    ARG(0, const char*);
     ARG(1, LLVMContextRef);
 
     RETURN2(LLVMModuleCreateWithNameInContext);
@@ -117,11 +117,43 @@ public:
     v8::HandleScope scope;
 
     ARG(0, LLVMTypeRef);
-    ARG(1, LLVMTypeRef*);
-    ARG(2, unsigned); // TODO array
+
+    v8::Array* arr = v8::Array::Cast(*args[1]);
+    int length = arr->Length();
+    LLVMTypeRef* arg1 = new LLVMTypeRef[length];
+    for (int i = 0; i < length; i++)
+    {
+      arg1[i] = U<LLVMTypeRef>(arr->Get(i));
+    }
+    unsigned arg2 = length;
+
     ARG(3, LLVMBool);
 
     RETURN4(LLVMFunctionType);
+  }
+
+  static v8::Handle<v8::Value>
+  AddFunction(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
+
+    ARG(0, LLVMModuleRef);
+    ARG(1, const char*);
+    ARG(2, LLVMTypeRef);
+
+    RETURN3(LLVMAddFunction);
+  }
+
+  static v8::Handle<v8::Value>
+  AppendBasicBlockInContext(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
+
+    ARG(0, LLVMContextRef);
+    ARG(1, LLVMValueRef);
+    ARG(2, const char*);
+
+    RETURN3(LLVMAppendBasicBlockInContext);
   }
 
 
@@ -154,6 +186,9 @@ public:
     DECLARE(ModuleCreateWithNameInContext);
     DECLARE(DoubleTypeInContext);
     DECLARE(ConstReal);
+    DECLARE(FunctionType);
+    DECLARE(AddFunction);
+    DECLARE(AppendBasicBlockInContext);
 #undef DECLARE
   }
 

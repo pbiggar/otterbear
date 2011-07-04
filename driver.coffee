@@ -20,6 +20,8 @@ one = llvm.ConstReal(floatType, 1.0)
 two = llvm.ConstReal(floatType, 2.0)
 m = llvm.ModuleCreateWithNameInContext("test app", cx)
 ft =  llvm.FunctionType(floatType, [floatType, floatType], false)
+f =  llvm.AddFunction(m, 'main', ft)
+bb = llvm.AppendBasicBlockInContext(cx, f, 'entry')
 
 console.log(llvm)
 
