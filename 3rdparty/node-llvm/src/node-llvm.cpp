@@ -3,19 +3,7 @@
 #include <v8.h>
 #include <node.h>
 
-#include "llvm/Analysis/Passes.h"
-#include "llvm/Analysis/Verifier.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/JIT.h"
-#include "llvm/LLVMContext.h"
-#include "llvm/Module.h"
-#include "llvm/PassManager.h"
-#include "llvm/Support/IRBuilder.h"
-#include "llvm/Target/TargetData.h"
-#include "llvm/Target/TargetSelect.h"
-#include "llvm/Transforms/Scalar.h"
-
+#include "llvm-c/Core.h"
 
 /*
  * LLVM wrapper API. In the longer term, maybe we should just copy ruby-llvm
@@ -36,82 +24,108 @@ U(v8::Handle<v8::Value> v)
   return static_cast<T>(v8::External::Unwrap(v));
 }
 
-//  llvm::IRBuilder<> builder;
-//  llvm::Module module;
-//    builder(cx),
+template<> char*
+U<char*>(v8::Handle<v8::Value> v)
+{
+  return *v8::String::AsciiValue(v);
+}
+
+template<> double
+U<double>(v8::Handle<v8::Value> v)
+{
+  return v->NumberValue();
+}
+
+template<> unsigned int
+U<unsigned int>(v8::Handle<v8::Value> v)
+{
+  return v->Uint32Value();
+}
+
+template<> int
+U<int>(v8::Handle<v8::Value> v)
+{
+  return v->Int32Value();
+}
+
 class LLVM : node::ObjectWrap
 {
 public:
   LLVM() {}
 
+#define ARG(I,TYPE) TYPE arg##I = U<TYPE>(args[I]);
+
+#define RETURNN(TYPE,ARGS) return v8::External::Wrap(TYPE ARGS);
+#define RETURN0(FUNCTION) RETURNN(FUNCTION, ());
+#define RETURN1(FUNCTION) RETURNN(FUNCTION, (arg0));
+#define RETURN2(FUNCTION) RETURNN(FUNCTION, (arg0, arg1));
+#define RETURN3(FUNCTION) RETURNN(FUNCTION, (arg0, arg1, arg2));
+#define RETURN4(FUNCTION) RETURNN(FUNCTION, (arg0, arg1, arg2, arg3));
+
   static v8::Handle<v8::Value>
-  ConstantFPGet(const v8::Arguments& args)
+  ConstReal(const v8::Arguments& args)
   {
     v8::HandleScope scope;
 
-    // args
-    llvm::LLVMContext* arg0 = U<llvm::LLVMContext*>(args[0]);
-    llvm::APFloat* arg1 = U<llvm::APFloat*>(args[1]);
+    ARG(0, LLVMTypeRef);
+    ARG(1, double);
 
-    llvm::Value* result = llvm::ConstantFP::get(*arg0, *arg1);
-
-    return v8::External::Wrap(result);
+    RETURN2(LLVMConstReal);
   }
 
   static v8::Handle<v8::Value>
-  APFloat(const v8::Arguments& args)
+  DoubleTypeInContext(const v8::Arguments& args)
   {
     v8::HandleScope scope;
 
-    // args
-    double arg0 = args[0]->NumberValue();
+    ARG(0, LLVMContextRef);
 
-    llvm::APFloat* result = new llvm::APFloat(arg0);
-
-    return v8::External::Wrap(result);
+    RETURN1(LLVMDoubleTypeInContext);
   }
 
   static v8::Handle<v8::Value>
-  getGlobalContext(const v8::Arguments& args)
+  GetGlobalContext(const v8::Arguments& args)
   {
     v8::HandleScope scope;
 
-    // no args
-
-    llvm::LLVMContext& result = llvm::getGlobalContext();
-
-    return v8::External::Wrap(&result); // TODO
+    RETURN0(LLVMGetGlobalContext);
   }
 
   static v8::Handle<v8::Value>
-  Module(const v8::Arguments& args)
+  ModuleCreateWithNameInContext(const v8::Arguments& args)
   {
     v8::HandleScope scope;
 
-    // args
-    const char* arg0 = args[0]->ToString()->GetExternalAsciiStringResource()->data();
-    llvm::LLVMContext* arg1 = U<llvm::LLVMContext*>(args[1]);
+    ARG(0, char*);
+    ARG(1, LLVMContextRef);
 
-    llvm::Module* result = new llvm::Module(arg0, *arg1);
-
-    return v8::External::Wrap(result);
+    RETURN2(LLVMModuleCreateWithNameInContext);
   }
 
   static v8::Handle<v8::Value>
-  IRBuilder(const v8::Arguments& args)
+  CreateBuilderInContext(const v8::Arguments& args)
   {
     v8::HandleScope scope;
 
-    // args
-    llvm::LLVMContext* arg0 = U<llvm::LLVMContext*>(args[0]);
+    ARG(0, LLVMContextRef);
+    RETURN1(LLVMBuilderRef);
+  }
 
-    llvm::IRBuilder<>* result = new llvm::IRBuilder<>(*arg0);
+  static v8::Handle<v8::Value>
+  FunctionType(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
 
-    return v8::External::Wrap(result);
+    ARG(0, LLVMTypeRef);
+    ARG(1, LLVMTypeRef*);
+    ARG(2, unsigned); // TODO array
+    ARG(3, LLVMBool);
+
+    RETURN4(LLVMFunctionType);
   }
 
 
-  // new LLVM();
+
   static v8::Handle<v8::Value>
   New(const v8::Arguments& args)
   {
@@ -134,12 +148,13 @@ public:
 
     target->Set(String::NewSymbol("LLVM"), pft->GetFunction());
 
-    // Functions
-    pft->InstanceTemplate()->Set("getGlobalContext", v8::FunctionTemplate::New(getGlobalContext));
-    pft->InstanceTemplate()->Set("IRBuilder", v8::FunctionTemplate::New(IRBuilder));
-    pft->InstanceTemplate()->Set("APFloat", v8::FunctionTemplate::New(APFloat));
-    pft->InstanceTemplate()->Set("ConstantFPGet", v8::FunctionTemplate::New(ConstantFPGet));
-    pft->InstanceTemplate()->Set("Module", v8::FunctionTemplate::New(Module));
+#define DECLARE(NAME) pft->InstanceTemplate()->Set(#NAME, v8::FunctionTemplate::New(NAME));
+    DECLARE(GetGlobalContext);
+    DECLARE(CreateBuilderInContext);
+    DECLARE(ModuleCreateWithNameInContext);
+    DECLARE(DoubleTypeInContext);
+    DECLARE(ConstReal);
+#undef DECLARE
   }
 
 private:
@@ -153,7 +168,6 @@ extern "C" {
 static void
 init(v8::Handle<v8::Object> target)
 {
-  llvm::InitializeNativeTarget();
   LLVM::Init(target);
 }
 
