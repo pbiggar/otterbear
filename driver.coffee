@@ -25,11 +25,15 @@ bb = llvm.AppendBasicBlockInContext(cx, f, 'entry')
 llvm.PositionBuilderAtEnd(builder, bb)
 llvm.BuildRet(builder, zero)
 [success, ee, str] = llvm.CreateJITCompilerForModule(m, 0)
-
-console.log(llvm)
 console.log(success)
 console.log(ee)
 console.log(str)
+if !success
+  sys.exit(str)
+else
+  llvm.RunFunction(ee, f, [])
+
+console.log(llvm)
 
 llvm.VerifyFunction(f)
 llvm.DumpModule(m)

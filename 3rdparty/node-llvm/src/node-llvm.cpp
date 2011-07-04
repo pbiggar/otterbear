@@ -41,6 +41,12 @@ W<const char*>(const char* v)
 }
 
 template<> v8::Handle<v8::Value> 
+W<char*>(char* v)
+{
+  return v8::String::New(v);
+}
+
+template<> v8::Handle<v8::Value> 
 W<double>(double v)
 {
   return v8::Number::New(v);
@@ -67,6 +73,12 @@ U(v8::Handle<v8::Value> v)
 
 template<> const char*
 U<const char*>(v8::Handle<v8::Value> v)
+{
+  return *v8::String::AsciiValue(v);
+}
+
+template<> char*
+U<char*>(v8::Handle<v8::Value> v)
 {
   return *v8::String::AsciiValue(v);
 }
@@ -295,6 +307,27 @@ public:
   }
 
   static v8::Handle<v8::Value>
+  RunFunction(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
+
+    ARG(0, LLVMExecutionEngineRef);
+    ARG(1, LLVMValueRef);
+
+    v8::Array* arr = v8::Array::Cast(*args[2]);
+    int length = arr->Length();
+    LLVMGenericValueRef* arg3 = new LLVMGenericValueRef[length];
+    for (int i = 0; i < length; i++)
+    {
+      arg3[i] = U<LLVMGenericValueRef>(arr->Get(i));
+    }
+    unsigned arg2 = length;
+
+    CALL4(LLVMRunFunction);
+    RETURN1();
+  }
+
+  static v8::Handle<v8::Value>
   New(const v8::Arguments& args)
   {
     v8::HandleScope scope;
@@ -330,6 +363,7 @@ public:
     DECLARE(VerifyFunction);
     DECLARE(DumpModule);
     DECLARE(CreateJITCompilerForModule);
+    DECLARE(RunFunction);
 #undef DECLARE
   }
 
