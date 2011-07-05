@@ -109,6 +109,18 @@ public:
 #define OUTARG(I,TYPE) TYPE arg##I##_storage = NULL; TYPE* arg##I = &arg##I##_storage;
 #define ARG(I,TYPE) TYPE arg##I = print(NULL, "arg" #I, U<TYPE>(args[I]));
 
+// CALLER_ARG is the arg position in the calleR that has an array passed.
+// LENGTH_ARG is the arg position in the calleE that will hold the length.
+// ARRAY_ARG  is the arg position in the calleE that will hold the value pointer.
+#define ARG_ARRAY(CALLER_ARG, LENGTH_ARG, ARRAY_ARG, TYPE) \
+    v8::Array* arr = v8::Array::Cast(*args[CALLER_ARG]); \
+    unsigned arg##LENGTH_ARG = arr->Length(); \
+    TYPE* arg##ARRAY_ARG = new TYPE[arg##LENGTH_ARG]; \
+    for (unsigned i = 0; i < arg##LENGTH_ARG; i++) \
+    { \
+      arg##ARRAY_ARG[i] = U<TYPE>(arr->Get(i)); \
+    }
+
 #define CALLN(FUNCTION,ARGS) v8::Handle<v8::Value> result = W((print(#FUNCTION, "call", FUNCTION ARGS)));
 
 #define CALL0(FUNCTION) CALLN(FUNCTION, ());
@@ -198,16 +210,7 @@ public:
     v8::HandleScope scope;
 
     ARG(0, LLVMTypeRef);
-
-    v8::Array* arr = v8::Array::Cast(*args[1]);
-    int length = arr->Length();
-    LLVMTypeRef* arg1 = new LLVMTypeRef[length];
-    for (int i = 0; i < length; i++)
-    {
-      arg1[i] = U<LLVMTypeRef>(arr->Get(i));
-    }
-    unsigned arg2 = length;
-
+    ARG_ARRAY(1, 2, 1, LLVMTypeRef);
     ARG(3, LLVMBool);
 
     CALL4(LLVMFunctionType);
@@ -292,14 +295,10 @@ public:
   {
     v8::HandleScope scope;
 
-    LLVMExecutionEngineRef arg0_storage = NULL;
-    LLVMExecutionEngineRef* arg0 = &arg0_storage;
-
+    OUTARG(0, LLVMExecutionEngineRef);
     ARG(1, LLVMModuleRef);
     ARG(2, int);
-
-    char* arg3_storage = NULL;
-    char** arg3 = &arg3_storage;
+    OUTARG(3, char*);
 
     CALL4(LLVMCreateJITCompilerForModule);
 
@@ -313,15 +312,7 @@ public:
 
     ARG(0, LLVMExecutionEngineRef);
     ARG(1, LLVMValueRef);
-
-    v8::Array* arr = v8::Array::Cast(*args[2]);
-    int length = arr->Length();
-    LLVMGenericValueRef* arg3 = new LLVMGenericValueRef[length];
-    for (int i = 0; i < length; i++)
-    {
-      arg3[i] = U<LLVMGenericValueRef>(arr->Get(i));
-    }
-    unsigned arg2 = length;
+    ARG_ARRAY(2, 2, 3, LLVMGenericValueRef);
 
     CALL4(LLVMRunFunction);
     RETURN1();

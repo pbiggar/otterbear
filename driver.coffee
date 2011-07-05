@@ -28,10 +28,10 @@ llvm.BuildRet(builder, zero)
 console.log(success)
 console.log(ee)
 console.log(str)
-if !success
-  sys.exit(str)
-else
+if success
   llvm.RunFunction(ee, f, [])
+else
+  sys.exit(str)
 
 console.log(llvm)
 
