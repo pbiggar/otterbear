@@ -55,6 +55,7 @@ class NodeJS(object):
     def add_to_body(self, str):
       self.body += [str]
 
+    # TODO: ninja or another template framework will simplify this
     def __str__(self):
       return """static v8::Handle<v8::Value>
 """ + self.name + """(const v8::Arguments& args)
@@ -73,6 +74,13 @@ class NodeJS(object):
       func = self.func(enum.name)
       func.add_to_body("ASSIGN((int)(" + enum.name + "));")
       func.add_to_body("RETURN0();")
+      output += str(func)
+
+    for func in self.ffi.basics:
+      func = self.func(func.name)
+      sig = llvm.read_signature(func.name)
+      for i,arg in enumerate(sig.args):
+        func.add_to_body("ARG(" + i + ', ' + arg.type + ');')
       output += str(func)
 
     return output
