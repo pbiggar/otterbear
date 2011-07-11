@@ -1,0 +1,30 @@
+Prefix: LLVM
+
+Basic:
+  ConstReal
+  DoubleTypeInContext
+  GetGlobalContext
+  ModuleCreateWithNameInContext
+  CreateBuilderInContext
+  AddFunction
+  AppendBasicBlockInContext
+  PositionBuilderAtEnd
+  BuildRet
+  DumpModule
+  GenericValueToFloat
+
+Enum:
+  PrintMessageAction
+
+# convert these to tuples
+Non-Basic:
+  FunctionType:
+    ARRAY(1, 2, 1, LLVMTypeRef)
+
+  CreateJITCompilerForModule:
+    OUTARG(0)
+    OUTARG(3)
+
+  RunFunction:
+    ARRAY(1, 2, 1)
+    ARG_ARRAY(2, 2, 3)
