@@ -47,12 +47,35 @@ class NodeJS(object):
   def __init__(self, ffi):
     self.ffi = ffi
 
+  class func(object):
+    def __init__(self, name):
+      self.name = name
+      self.body = []
+
+    def add_to_body(self, str):
+      self.body += [str]
+
+    def __str__(self):
+      return """static v8::Handle<v8::Value>
+""" + self.name + """(const v8::Arguments& args)
+{
+  v8::HandleScope scope;
+  """ + "\n  ".join(self.body) + """
+}
+"""
+
+ 
+
   def generate(self):
     output = ""
 
-    for self.ffi.enums:
+    for enum in self.ffi.enums:
+      func = self.func(enum.name)
+      func.add_to_body("ASSIGN((int)(" + enum.name + "));")
+      func.add_to_body("RETURN0();")
+      output += str(func)
 
-    pass
+    return output
 
 
 
