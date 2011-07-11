@@ -31,18 +31,27 @@ print(const char* function, const char* type, T t)
 template<typename T> v8::Handle<v8::Value>
 W(T v)
 {
+  if (v == NULL)
+    return v8::Undefined();
+
   return v8::External::Wrap(v);
 }
 
 template<> v8::Handle<v8::Value> 
 W<const char*>(const char* v)
 {
+  if (v == NULL)
+    return v8::Undefined();
+
   return v8::String::New(v);
 }
 
 template<> v8::Handle<v8::Value> 
 W<char*>(char* v)
 {
+  if (v == NULL)
+    return v8::Undefined();
+
   return v8::String::New(v);
 }
 
@@ -55,19 +64,21 @@ W<double>(double v)
 template<> v8::Handle<v8::Value> 
 W<unsigned int>(unsigned int v)
 {
-  return v8::Number::New(v);
+  return v8::Uint32::New(v);
 }
 
 template<> v8::Handle<v8::Value> 
 W<int>(int v)
 {
-  return v8::Number::New(v);
+  return v8::Int32::New(v);
 }
 
 
 template<typename T> T
 U(v8::Handle<v8::Value> v)
 {
+  if (v->IsUndefined())
+    return NULL;
   return static_cast<T>(v8::External::Unwrap(v));
 }
 
@@ -80,6 +91,9 @@ U<const char*>(v8::Handle<v8::Value> v)
 template<> char*
 U<char*>(v8::Handle<v8::Value> v)
 {
+  if (v->IsUndefined())
+    return NULL;
+
   return *v8::String::AsciiValue(v);
 }
 
@@ -108,6 +122,7 @@ public:
 
 #define OUTARG(I,TYPE) TYPE arg##I##_storage = NULL; TYPE* arg##I = &arg##I##_storage;
 #define ARG(I,TYPE) TYPE arg##I = print(NULL, "arg" #I, U<TYPE>(args[I]));
+#define ARG_POS(CALLEE_POS,TYPE,CALLER_POS) TYPE arg##CALLEE_POS = print(NULL, "arg(" #CALLER_POS "," #CALLEE_POS ")", U<TYPE>(args[CALLER_POS]));
 
 // CALLER_ARG is the arg position in the calleR that has an array passed.
 // LENGTH_ARG is the arg position in the calleE that will hold the length.
@@ -139,14 +154,14 @@ public:
 
 #define RETURN0() return v8::Undefined()
 #define RETURN1() return scope.Close(result)
-#define RETURN2(I1) v8::Local<v8::Array> array_result = v8::Array::New(); \
+#define RETURN2(I0) v8::Local<v8::Array> array_result = v8::Array::New(); \
   array_result->Set(0, result); \
-  array_result->Set(1, W(arg##I1##_storage)); \
+  array_result->Set(1, W(arg##I0##_storage)); \
   return scope.Close(array_result)
-#define RETURN3(I1,I2) v8::Local<v8::Array> array_result = v8::Array::New(); \
+#define RETURN3(I0,I1) v8::Local<v8::Array> array_result = v8::Array::New(); \
   array_result->Set(0, result); \
-  array_result->Set(1, W(arg##I1##_storage)); \
-  array_result->Set(2, W(arg##I2##_storage)); \
+  array_result->Set(1, W(arg##I0##_storage)); \
+  array_result->Set(2, W(arg##I1##_storage)); \
   return scope.Close(array_result)
 
 
@@ -296,8 +311,8 @@ public:
     v8::HandleScope scope;
 
     OUTARG(0, LLVMExecutionEngineRef);
-    ARG(1, LLVMModuleRef);
-    ARG(2, int);
+    ARG_POS(1, LLVMModuleRef, 0);
+    ARG_POS(2, int, 1);
     OUTARG(3, char*);
 
     CALL4(LLVMCreateJITCompilerForModule);
@@ -315,6 +330,18 @@ public:
     ARG_ARRAY(2, 2, 3, LLVMGenericValueRef);
 
     CALL4(LLVMRunFunction);
+    RETURN1();
+  }
+
+  static v8::Handle<v8::Value>
+  GenericValueToFloat(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
+
+    ARG(0, LLVMTypeRef);
+    ARG(1, LLVMGenericValueRef);
+
+    CALL2(LLVMGenericValueToFloat);
     RETURN1();
   }
 
@@ -355,6 +382,7 @@ public:
     DECLARE(DumpModule);
     DECLARE(CreateJITCompilerForModule);
     DECLARE(RunFunction);
+    DECLARE(GenericValueToFloat);
 #undef DECLARE
   }
 
@@ -370,6 +398,9 @@ static void
 init(v8::Handle<v8::Object> target)
 {
   LLVM::Init(target);
+  LLVMLinkInJIT();
+  LLVMInitializeX86Target();
+  LLVMInitializeX86TargetInfo();
 }
 
 NODE_MODULE(llvm, init);

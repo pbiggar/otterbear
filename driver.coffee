@@ -1,5 +1,7 @@
 #!/usr/bin/env coffee -b
 
+fs = require("fs")
+
 parser = require("./parser")
 builtins = require("./builtins")
 runtime = require("./runtime")
@@ -7,7 +9,7 @@ interpreter = require("./interpreter")
 compiler = require("./compiler")
 util = require("./util")
 var_dump = util.var_dump
-fs = require("fs")
+
 
 llvm = require("./3rdparty/node-llvm/build/default/llvm.node")
 
@@ -23,35 +25,20 @@ ft =  llvm.FunctionType(floatType, [floatType, floatType], false)
 f =  llvm.AddFunction(m, 'main', ft)
 bb = llvm.AppendBasicBlockInContext(cx, f, 'entry')
 llvm.PositionBuilderAtEnd(builder, bb)
-llvm.BuildRet(builder, zero)
-[success, ee, str] = llvm.CreateJITCompilerForModule(m, 0)
-console.log(success)
-console.log(ee)
-console.log(str)
-if success
-  llvm.RunFunction(ee, f, [])
-else
-  sys.exit(str)
+llvm.BuildRet(builder, one)
 
-console.log(llvm)
+[fail, ee, str] = llvm.CreateJITCompilerForModule(m, 0)
+if fail
+  console.log(str)
+  llvm.VerifyFunction(f)
+  llvm.DumpModule(m)
+  process.exit(-1)
 
-llvm.VerifyFunction(f)
-llvm.DumpModule(m)
+result = llvm.RunFunction(ee, f, [])
+fres = llvm.GenericValueToFloat(floatType, result)
+console.log(fres)
 
 console.log("DONE")
-
-
-
-#pointer = func.functionPointer()
-#pointer.call()
-#
-#three = llvm.add(one, two)
-#six = llvm.add(three, three)
-#five = llvm.subtract(six, one)
-#eleven = llvm.add(six, five)
-
-#pointer = func.functionPointer()
-#pointer.call()
 
 
 
