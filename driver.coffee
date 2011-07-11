@@ -30,7 +30,7 @@ llvm.BuildRet(builder, one)
 [fail, ee, str] = llvm.CreateJITCompilerForModule(m, 0)
 if fail
   console.log(str)
-  llvm.VerifyFunction(f)
+  llvm.VerifyFunction(f, llvm.PrintMessageAction)
   llvm.DumpModule(m)
   process.exit(-1)
 

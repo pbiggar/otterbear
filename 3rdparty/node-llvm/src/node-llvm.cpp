@@ -73,12 +73,18 @@ W<int>(int v)
   return v8::Int32::New(v);
 }
 
+template<> v8::Handle<v8::Value> 
+W<long int>(long int v)
+{
+  return v8::Int32::New(v);
+}
 
 template<typename T> T
 U(v8::Handle<v8::Value> v)
 {
   if (v->IsUndefined())
     return NULL;
+
   return static_cast<T>(v8::External::Unwrap(v));
 }
 
@@ -115,6 +121,12 @@ U<int>(v8::Handle<v8::Value> v)
   return v->Int32Value();
 }
 
+template<> long int
+U<long int>(v8::Handle<v8::Value> v)
+{
+  return v->Int32Value();
+}
+
 class LLVM : node::ObjectWrap
 {
 public:
@@ -122,6 +134,7 @@ public:
 
 #define OUTARG(I,TYPE) TYPE arg##I##_storage = NULL; TYPE* arg##I = &arg##I##_storage;
 #define ARG(I,TYPE) TYPE arg##I = print(NULL, "arg" #I, U<TYPE>(args[I]));
+#define ARG_CAST(I,CALLER_TYPE,CALLEE_TYPE) CALLEE_TYPE arg##I = print(NULL, "arg" #I, (CALLEE_TYPE)(U<CALLER_TYPE>(args[I])));
 #define ARG_POS(CALLEE_POS,TYPE,CALLER_POS) TYPE arg##CALLEE_POS = print(NULL, "arg(" #CALLER_POS "," #CALLEE_POS ")", U<TYPE>(args[CALLER_POS]));
 
 // CALLER_ARG is the arg position in the calleR that has an array passed.
@@ -151,6 +164,8 @@ public:
 #define CALL2VOID(FUNCTION) CALLNVOID(FUNCTION, (arg0, arg1));
 #define CALL3VOID(FUNCTION) CALLNVOID(FUNCTION, (arg0, arg1, arg2));
 #define CALL4VOID(FUNCTION) CALLNVOID(FUNCTION, (arg0, arg1, arg2, arg3));
+
+#define ASSIGN(VAL) v8::Handle<v8::Value> result = W(VAL);
 
 #define RETURN0() return v8::Undefined()
 #define RETURN1() return scope.Close(result)
@@ -299,9 +314,19 @@ public:
     v8::HandleScope scope;
 
     ARG(0, LLVMValueRef);
-    LLVMVerifierFailureAction arg1 = LLVMPrintMessageAction;
+    ARG_CAST(1, int, LLVMVerifierFailureAction);
 
     CALL2VOID(LLVMVerifyFunction);
+    RETURN0();
+  }
+
+  static v8::Handle<v8::Value>
+  PrintMessageAction(const v8::Arguments& args)
+  {
+    v8::HandleScope scope;
+
+    ASSIGN((int)(LLVMPrintMessageAction));
+
     RETURN0();
   }
 
