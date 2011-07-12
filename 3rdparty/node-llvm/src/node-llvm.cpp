@@ -130,8 +130,6 @@ U<long int>(v8::Handle<v8::Value> v)
 class LLVM : node::ObjectWrap
 {
 public:
-  LLVM() {}
-
 #define OUTARG(I,TYPE) TYPE arg##I##_storage = NULL; TYPE* arg##I = &arg##I##_storage;
 #define ARG(I,TYPE) TYPE arg##I = print(NULL, "arg" #I, U<TYPE>(args[I]));
 #define ARG_CAST(I,CALLER_TYPE,CALLEE_TYPE) CALLEE_TYPE arg##I = print(NULL, "arg" #I, (CALLEE_TYPE)(U<CALLER_TYPE>(args[I])));
