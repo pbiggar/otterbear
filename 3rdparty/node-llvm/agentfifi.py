@@ -2,6 +2,8 @@
 
 import sys
 import yaml
+import clang
+from clang.cindex import Index
 
 class Enum:
   def __init__(self, name):
