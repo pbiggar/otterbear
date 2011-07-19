@@ -1,31 +1,32 @@
-internal = require("./3rdparty/node-llvm/build/default/llvm.node")
+# LLVM 
+llvm = require("./3rdparty/node-llvm/build/default/llvm.node").LLVM()
 
-internal = new internal.LLVM()
-cx = internal.GetGlobalContext()
-builder = internal.CreateBuilderInContext(cx)
-floatType = internal.DoubleTypeInContext(cx)
-zero = internal.ConstReal(floatType, 0.0)
-one = internal.ConstReal(floatType, 1.0)
-two = internal.ConstReal(floatType, 2.0)
-m = internal.ModuleCreateWithNameInContext("test app", cx)
-ft =  internal.FunctionType(floatType, [floatType, floatType], false)
-f =  internal.AddFunction(m, 'main', ft)
-bb = internal.AppendBasicBlockInContext(cx, f, 'entry')
-internal.PositionBuilderAtEnd(builder, bb)
-internal.BuildRet(builder, one)
+cx = llvm.GetGlobalContext()
+builder = llvm.CreateBuilderInContext(cx)
+floatType = llvm.DoubleTypeInContext(cx)
+zero = llvm.ConstReal(floatType, 0.0)
+one = llvm.ConstReal(floatType, 1.0)
+two = llvm.ConstReal(floatType, 2.0)
+m = llvm.ModuleCreateWithNameInContext("test app", cx)
+ft =  llvm.FunctionType(floatType, [floatType, floatType], false)
+f =  llvm.AddFunction(m, 'main', ft)
+bb = llvm.AppendBasicBlockInContext(cx, f, 'entry')
+llvm.PositionBuilderAtEnd(builder, bb)
+llvm.BuildRet(builder, one)
 
-[fail, ee, str] = internal.CreateJITCompilerForModule(m, 0)
+[fail, ee, str] = llvm.CreateJITCompilerForModule(m, 0)
 if fail
   console.log(str)
-  internal.VerifyFunction(f, internal.PrintMessageAction)
-  internal.DumpModule(m)
+  llvm.VerifyFunction(f, llvm.PrintMessageAction)
+  llvm.DumpModule(m)
   process.exit(-1)
 
-result = internal.RunFunction(ee, f, [])
-fres = internal.GenericValueToFloat(floatType, result)
+result = llvm.RunFunction(ee, f, [])
+fres = llvm.GenericValueToFloat(floatType, result)
 console.log(fres)
 
 console.log("DONE")
 
-
+exports.LLVM = class
+  constructor: () ->
 
