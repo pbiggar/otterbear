@@ -1,5 +1,37 @@
 # Parses JS code into bytecode.
 
+fs = require('fs')
+cs = require('coffee-script')
+narcissus = require('narcissus')
+
+exports.Parser = class
+  constructor: (@filename) ->
+
+  parse: () ->
+    input = fs.readFileSync(@filename, 'utf-8')
+    console.log("Parsing #{@filename}")
+
+    if (/\.coffee$/.test(@filename))
+      input = cs.compile(input)
+
+    ast = narcissus.parser.parse(input)
+    new AST(ast)
+
+
+
+class AST
+  constructor: (@n_ast) ->
+
+  to_bitcode: () ->
+    for statement in @n_ast.children
+      console.log("x")
+
+
+bc = (new exports.Parser('lir.coffee')).parse().to_bitcode()
+
+
+
+
 opcodes = require("./opcodes")
 util = require("util")
 assert = require("assert")
