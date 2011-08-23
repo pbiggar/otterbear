@@ -6,8 +6,12 @@ import sys
 import os
 
 # Run it
-proc = subprocess.Popen(['coffee'] + sys.argv[1:], stderr=subprocess.PIPE)
-(_, err) = proc.communicate()
+try:
+  err = ""
+  proc = subprocess.Popen(['coffee'] + sys.argv[1:], stderr=subprocess.PIPE)
+  (_, err) = proc.communicate()
+except KeyboardInterrupt, e:
+  print "CTRL-C"
 
 if proc.returncode == 0:
   sys.exit(0)
