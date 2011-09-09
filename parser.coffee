@@ -9,7 +9,6 @@ exports.Parser = class
 
   parse: () ->
     input = fs.readFileSync(@filename, 'utf-8')
-    console.log("Parsing #{@filename}")
 
     if (/\.coffee$/.test(@filename))
       input = cs.compile(input)
@@ -18,18 +17,28 @@ exports.Parser = class
     new AST(ast)
 
 
-
 class AST
   constructor: (@n_ast) ->
 
-  to_bitcode: () ->
-    for statement in @n_ast.children
-      console.log("x")
+  to_bytecode: () ->
+    # TODO
 
 
-bc = (new exports.Parser('lir.coffee')).parse().to_bitcode()
+bc = (new exports.Parser('test.js')).parse().to_bytecode()
 
-
+# The aim is to ahead-of-time compile the compiler, and use it to interpret
+# (and later JIT) the bytecodes (naturally, the compiled compiler will be able
+# to interpret itself).
+#
+# To compile the compiler, we translate it into bytecodes, then translate the
+# bytecodes into bitcode, then pass that off to LLVM.
+#
+# That leaves the standard library, the GC, and implementations of values,
+# strings, arrays, etc. They should be also implemented in coffeescript, but a
+# lower-level version which corresponds directly to bitcode. We can also write
+# the bytecode definitions in this RCS (restricted coffeescript, based on the
+# RPython), and preprocess them depending on whether we're translating or
+# interpreting or jitting them.
 
 
 opcodes = require("./opcodes")

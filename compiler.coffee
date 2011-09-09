@@ -10,12 +10,12 @@ exports.Compiler = class
       @.compile_funktion(f)
 
   compile_funktion: (f) ->
-    return
+    return if not f.bytes
+    console.log f
     # Parse each bytecode's implementation into bitcode
     bitcodes =
       for bc in f.bytes
-        ast = Parser.parse(bc.impl)
-        ast.to_bitcode()
+        bc.to_bitcode()
 
     # Stitch them all together
     bitcode = bitcodes.join()
